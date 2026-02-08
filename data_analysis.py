@@ -33,6 +33,7 @@ print(creative_df.head())
 The Dates are stored as strings --> Convert to datetime objects so I can work with them (analyse trends overtime)
 """
 
+
 # Convert Date columns to datetime objects
 historic_df['Week_Start'] = pd.to_datetime(historic_df['Week_Start'])
 creative_df['Report_Date'] = pd.to_datetime(creative_df['Report_Date'])
@@ -63,3 +64,106 @@ plt.gca().set_yticklabels(['{:,.0f}'.format(x) for x in current_values]) # Forma
 
 # Show the plot
 plt.show()
+
+# ==================================================================================
+# Calculate CPA (Cost Per Acquisition)
+# ==================================================================================
+# How much does it cost to get each person to convert? - Efficiency of our ad spend
+# CPA = Total Spend / Total Conversions             (Lower CPA = Better Performance)
+
+
+# Organise the data into groups (a unique group for each possible combination of Market and Channel)
+grouped_data = historic_df.groupby(['Market','Channel'])
+
+# Select the relevant columns for CPA analysis (Spend and Conversions) from the grouped data
+# Double [] to send a list of columns we want to keep - To keep it a dataframe instead of a series
+relevant_columns = grouped_data[['Spend_USD','Conversions']]
+
+# Sum the Spend and Conversions for each group (Market + Channel)
+cpa_analysis = relevant_columns.sum().reset_index()
+
+# Calculate CPA for each group (Market + Channel) - Create a new column 'CPA' to store our results
+cpa_analysis['CPA'] = cpa_analysis['Spend_USD'] / cpa_analysis['Conversions']
+
+cpa_analysis = cpa_analysis.sort_values('CPA', ascending=True) # Sort the results by CPA in ascending order (lowest CPA at the top)
+
+print("\n\033[32m--- CPA by Market and Channel ---\033[0m")
+
+print(cpa_analysis)
+
+# ==================================================================================
+# Visualise CPA by Market and Channel (Bar Chart)
+# ==================================================================================
+
+plt.figure(figsize=(12,6)) # Set the size of the graph
+
+# Create a bar chart with Market on the x-axis, CPA on the y-axis, and different colors for each Channel
+sns.barplot(data=cpa_analysis, x='Market', y='CPA', hue='Channel', palette='rocket')
+
+# Add title and labels to the axes
+plt.title('Cost Per Acquisition (CPA) by Market & Channel')
+plt.ylabel('Cost per User (USD)')
+plt.xlabel('Market')
+plt.legend(title='Channel') # Add a legend to explain the colors (hue) with the title 'Channel'
+
+plt.show()
+
+# ==================================================================================
+# CPLU Analysis (Cost Per Lifted User)
+# ==================================================================================
+
+# CPA measures 'Action' (Did they click buy?)
+# CPLU measures 'Influence' (Did we change their mind?)
+# Because changing their mind could lead to a conversion later on (so we can't solely rely on CPA to measure the impact of our ads)
+
+# Group the data by Campaign Name, Market, and Channel (to get a unique group/row for each combination of these 3 variables)
+groups_to_be_summed = historic_df.groupby(['Campaign_Name', 'Market','Channel'])
+# Sum the Spend and Reach for each group (Reach is used to calculate the Lifted Users later)
+historic_totals = groups_to_be_summed[['Spend_USD','Reach']].sum().reset_index()
+
+
+# --------- MERGE DATASETS (Inner Join) ---------
+
+# INNER JOIN tables 'brand_lift_df' and 'historic_totals' using the composite key of ['Campaign_Name', 'Market','Channel']
+# Only combine rows where ALL THREE of these columns match in both tables (inner join)
+cplu_df = pd.merge(brand_lift_df, historic_totals, on=['Campaign_Name', 'Market','Channel'], how='inner')
+
+
+# --------- CALCULATE Absolute Lift ---------
+# Absolute Lift = Exposed Rate - Control Rate (How much did the ad influence the exposed group compared to the people who didn't see the ad ('Control' group)?)
+cplu_df['Absolute_Lift'] = cplu_df['Exposed_Rate'] - cplu_df['Control_Rate']
+
+# --------- CALCULATE Lifted Users ---------
+# How many actual users changed their mind because of the ad?
+# Lifted Users = Reach(How many people saw the ad) * Absolute Lift (Success rate of the ad)
+cplu_df['Lifted_Users'] = cplu_df['Reach'] * cplu_df['Absolute_Lift']
+
+# --------- CALCULATE Cost Per Lifted User (CPLU) ---------
+# CPLU = Total Spend / Lifted Users (How much did it cost to change the mind of each user?)
+cplu_df['CPLU'] = cplu_df['Spend_USD'] / cplu_df['Lifted_Users']
+
+# Sort the results by CPLU in ascending order (lowest CPLU at the top)
+cplu_sorted = cplu_df.sort_values('CPLU', ascending=True)
+
+print("\n\033[32m--- Cost Per Lifted User (CPLU) by Campaign, Market & Channel ---\033[0m")
+print(cplu_sorted[['Campaign_Name', 'Market', 'Channel', 'CPLU', 'Lifted_Users']])
+
+# ==================================================================================
+# Visualise CPLU by Market and Channel (Bar Chart)
+# ==================================================================================
+
+plt.figure(figsize=(12,6)) # Set the size of the graph
+# Create a bar chart with Market on the x-axis, CPLU on the y-axis, and different colors for each Channel
+sns.barplot(data=cplu_sorted, x='Market', y='CPLU', hue='Channel', palette='magma')
+
+# Add title and labels to the axes
+plt.title('Cost Per Lifted User (CPLU) by Market & Channel')
+plt.ylabel('Cost per Lifted User (USD)')
+plt.xlabel('Market')
+plt.show()
+
+# ==================================================================================
+# Test for Statistical Significance (The Z-Test)
+# ==================================================================================
+
+
