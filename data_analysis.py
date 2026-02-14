@@ -199,7 +199,29 @@ print("\n\033[32m--- Brand Lift Study Results with Statistical Significance ---\
 print(brand_lift_df[['Campaign_Name', 'Market', 'Channel', 'Relative_Lift', 'Significant']].sort_values('Relative_Lift', ascending=False))
 
 # ==================================================================================
-# Creative Performance Analysis (The last csv file)
+# Creative Performance Analysis (Which ad works best for which age group?)
 # ================================================================================== 
 
+# For each combination of Creative + Age Group, what is the average Consideration score (How much did people like the ad?)
+creative_performance = creative_df.groupby(['Creative_Name', 'Age_Group'])['Point_Est_Consideration'].mean().reset_index()
 
+# MAKING A HEATMAP:
+# Rows - Creative Name, Columns - Age Group, Values - Average Consideration Score
+heatmap_data = creative_performance.pivot(index='Creative_Name', columns='Age_Group', values='Point_Est_Consideration')
+
+print("\n\033[32m--- Creative Performance Heatmap Data ---\033[0m")
+print(heatmap_data)
+
+plt.figure(figsize=(10,6)) # Set the size of the graph
+
+# sns.heatmap() draws a coloured grid
+# annot=True writes the values (consideration scores) inside each grid cell
+# cmap='coolwarm' sets the colour scheme, making high numbers (high consideration) Red (Hot) and low numbers Blue (Cold)
+sns.heatmap(heatmap_data, annot=True, cmap='coolwarm', fmt=".2f")
+
+# plt to display the graph
+plt.title('Average Consideration Score by Creative & Age Group')
+plt.ylabel('Creative Name')
+plt.xlabel('Age Group')
+
+plt.show()
