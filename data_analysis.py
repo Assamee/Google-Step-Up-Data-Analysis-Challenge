@@ -225,3 +225,62 @@ plt.ylabel('Creative Name')
 plt.xlabel('Age Group')
 
 plt.show()
+
+# ==================================================================================
+# SAVE GRAPHS FOR SLIDE DECK
+# ==================================================================================
+print("\n--- Saving Graphs as Images... ---")
+
+# --- GRAPH 1: CPA Analysis (For Slide 2: The "Sales" Argument) ---
+plt.figure(figsize=(12, 6))
+# We sort by CPA to make the "Best" (lowest bars) easy to spot
+sns.barplot(data=cpa_analysis, x='Market', y='CPA', hue='Channel', palette='rocket')
+plt.title('Cost Per Acquisition (Lower is Better)')
+plt.ylabel('Cost per User (USD)')
+plt.xlabel('Market')
+plt.legend(title='Channel')
+# savefig saves the image. bbox_inches='tight' stops it from cutting off the text.
+plt.savefig('Slide2_CPA_Chart.png', bbox_inches='tight')
+plt.close() # Close the plot so it doesn't overlap with the next one
+print("Saved: Slide2_CPA_Chart.png")
+
+
+# --- GRAPH 2: CPLU Analysis (For Slide 3: The "Brand" Argument) ---
+plt.figure(figsize=(12, 6))
+sns.barplot(data=cplu_sorted, x='Market', y='CPLU', hue='Channel', palette='magma')
+plt.title('Cost Per Lifted User (Efficiency of Influence)')
+plt.ylabel('Cost per Lifted User (USD)')
+plt.xlabel('Market')
+plt.legend(title='Channel')
+plt.savefig('Slide3_CPLU_Chart.png', bbox_inches='tight')
+plt.close()
+print("Saved: Slide3_CPLU_Chart.png")
+
+
+# --- GRAPH 3: Creative Heatmap (For Slide 4: The "Creative" Argument) ---
+plt.figure(figsize=(10, 6))
+# Re-create the pivot table just in case
+heatmap_data = creative_performance.pivot(index='Creative_Name', columns='Age_Group', values='Point_Est_Consideration')
+sns.heatmap(heatmap_data, annot=True, cmap='coolwarm', fmt=".2f")
+plt.title('Creative Performance Score (Red = Hot)')
+plt.ylabel('Creative Concept')
+plt.xlabel('Student Age Group')
+plt.savefig('Slide4_Creative_Heatmap.png', bbox_inches='tight')
+plt.close()
+print("Saved: Slide4_Creative_Heatmap.png")
+
+
+# --- GRAPH 4: Budget Allocation (For Slide 5: The "Plan") ---
+# Newly made pie chart to visualise the 70-30 budget split between Growth and Maintenance markets
+plt.figure(figsize=(8, 8))
+budget_labels = ['Growth Markets (EG & SA)', 'Maintenance Markets (UK & DE)']
+budget_sizes = [70, 30] # 70% vs 30%
+colors = ['#4CAF50', '#FFC107'] # Green for Growth, Amber for Maintenance
+# autopct='%1.1f%%' adds the percentage labels to each slice, startangle=90 rotates the chart so the first slice starts at the top, explode=(0.1, 0) makes the Growth slice pop out slightly for emphasis
+plt.pie(budget_sizes, labels=budget_labels, colors=colors, autopct='%1.1f%%', startangle=90, explode=(0.1, 0))
+plt.title('Proposed Budget Allocation ($10M Total)')
+plt.savefig('Slide5_Budget_Allocation.png', bbox_inches='tight')
+plt.close()
+print("Saved: Slide5_Budget_Allocation.png")
+
+print("\nAll images saved! Check your folder.")

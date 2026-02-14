@@ -1,2 +1,12 @@
+# --- 1. Ignore Data & generated files ---
 *.csv
+__pycache__/
+*.png
+
+# --- 2. Ignore ALL PDF files by default ---
+# (This hides the 'How to Guide' and 'Digdata Presentation' PDFs)
 *.pdf
+
+# --- 3. EXCEPTION: Allow ONLY the submitted Slide Deck ---
+# (The '!' tells git to NOT ignore this specific file)
+!Google_Step_Up_Challenge_As-Samee_Clayton.pdf
