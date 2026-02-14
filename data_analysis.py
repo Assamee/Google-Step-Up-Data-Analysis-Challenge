@@ -11,7 +11,7 @@ historic_df = pd.read_csv('Historic Campaign Data - Sheet1.csv')
 brand_lift_df = pd.read_csv('Brand Lift Study Results - Sheet1.csv')
 creative_df = pd.read_csv('Creative Performance Report - Sheet1.csv')
 
-"""
+
 
 # Inspect the data
 # We look at the first few rows (.head) and data types (.info)
@@ -27,10 +27,10 @@ print("--- 3. Creative Performance Report ---")
 print(creative_df.info())
 print(creative_df.head())
 
-"""
+
 
 """ Notes:
-The Dates are stored as strings --> Convert to datetime objects so I can work with them (analyse trends overtime)
+The Dates are stored as strings --> Convert to datetime objects so we can work with them (analyse trends overtime)
 """
 
 
@@ -51,9 +51,11 @@ plt.figure(figsize=(10,6))
 
 # Create a bar plot using Seaborn
 # x = the categories (Market), y = the values (Spend_USD), hue = color by Market, palette = color scheme (make it look nice)
+# Seaborn turns the Dataframe into a bar chart
 sns.barplot(data=spend_by_market, x='Market', y='Spend_USD', hue='Market', palette='viridis')
 
 # Add title and labels to the axes
+# plt draws the graph defined by the previous sns.barplot line
 plt.title('Total Ad Spend by Market (Historic)')
 plt.ylabel('Total Spend (USD)')
 plt.xlabel('Market')
@@ -165,5 +167,39 @@ plt.show()
 # ==================================================================================
 # Test for Statistical Significance (The Z-Test)
 # ==================================================================================
+
+# Import the Z-Test function to check if the data is statistically significant (Is the difference in conversion rates between the exposed and control groups due to the ad, or just random chance?)
+from statsmodels.stats.proportion import proportions_ztest
+
+# Define a function to calculate the p-value (statistical significance) for each row of the brand lift data (for each campaign, market, and channel)
+def calculate_significance(row):
+
+    # Create a numpy array of the "Successes" (People who liked the brand with or without the ad)
+    successes = np.array([row['Exposed_Consideration'], row['Control_Consideration']])
+
+    # Create a numpy array of the "Trials" (Total people in the exposed and control groups)
+    trials = np.array([row['Exposed_Responses'], row['Control_Responses']])
+
+    # Perform the Z-Test using the proportions_ztest function)
+    stat, p_value = proportions_ztest(successes, trials, alternative='larger')
+
+    # Return the p-value (We will use this to determine if the results are statistically significant)
+    return p_value
+
+# Use .apply() to run the function on every row of the brand_lift_df dataframe
+# Create a new column 'P_value' to store the results
+brand_lift_df['P_value'] = brand_lift_df.apply(calculate_significance, axis=1) # axis=1 means we apply the function to each row (instead of each column)
+
+# DETERMINE SIGNIFICANCE
+# If the p-value is less than 0.05, we consider the result statistically significant (the ad had a real impact on brand consideration)
+brand_lift_df['Significant'] = brand_lift_df['P_value'] < 0.05
+
+
+print("\n\033[32m--- Brand Lift Study Results with Statistical Significance ---\033[0m")
+print(brand_lift_df[['Campaign_Name', 'Market', 'Channel', 'Relative_Lift', 'Significant']].sort_values('Relative_Lift', ascending=False))
+
+# ==================================================================================
+# Creative Performance Analysis (The last csv file)
+# ================================================================================== 
 
 
